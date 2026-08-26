@@ -16,17 +16,17 @@ function UploadCropModal({ title, aspect, onSave, onClose, editingItem }) {
   const [dragging, setDragging] = useState(false)
   const fileInputRef = useRef(null)
 
-  const useFile = (file) => {
+  const loadFile = (file) => {
     if (!file || !file.type.startsWith('image/')) return
     setImageSrc(URL.createObjectURL(file))
   }
 
-  const handleFileChange = (e) => useFile(e.target.files?.[0])
+  const handleFileChange = (e) => loadFile(e.target.files?.[0])
 
   const handleDrop = (e) => {
     e.preventDefault()
     setDragging(false)
-    useFile(e.dataTransfer.files?.[0])
+    loadFile(e.dataTransfer.files?.[0])
   }
 
   const onCropComplete = useCallback((_croppedArea, pixels) => {

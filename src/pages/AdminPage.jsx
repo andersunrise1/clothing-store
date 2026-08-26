@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react'
 import UploadCropModal from '../components/UploadCropModal'
 import { ASPECT_RATIOS } from '../data/outfitOptions'
-
-// Same backend the rest of the app will eventually talk to — see
-// .claude/skills/outfitmixer-backend-ecommerce for why this is a separate
-// Node/Express/SQLite server (server/) rather than folded into the Vite
-// frontend. No env-based config yet since there's only ever one backend
-// URL during local dev; revisit once a real deploy target exists.
-const API_URL = 'http://localhost:4000'
+import { API_URL } from '../config'
+import { formatPrice } from '../utils/price'
 
 const CATEGORY_OPTIONS = [
   'Skateboard',
@@ -19,10 +14,6 @@ const CATEGORY_OPTIONS = [
 ]
 
 const MIXER_CATEGORY_LABELS = { shirt: 'Camiseta', pants: 'Calça / Bermuda' }
-
-function formatPrice(cents) {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 function LoginForm({ onLogin }) {
   const [username, setUsername] = useState('')
@@ -279,15 +270,132 @@ function ProductForm({ token, onCreated }) {
   )
 }
 
-function ProductList({ token, products, onDeleted }) {
-  const handleDelete = async (id) => {
-    await fetch(`${API_URL}/api/admin/products/${id}`, {
+function ProductRow({ token, product, onUpdated, onDeleted }) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(product.name)
+  const [price, setPrice] = useState((product.price_cents / 100).toFixed(2))
+  const [category, setCategory] = useState(product.category)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleDelete = async () => {
+    await fetch(`${API_URL}/api/admin/products/${product.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
-    onDeleted(id)
+    onDeleted(product.id)
   }
 
+  const handleSave = async () => {
+    setError(null)
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/admin/products/${product.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, price, category }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao salvar')
+      onUpdated(data)
+      setEditing(false)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <li className="flex flex-col gap-2 rounded border border-purple-300 bg-purple-50 p-3">
+        <div className="flex items-center gap-3">
+          <img
+            src={`${API_URL}${product.image_url}`}
+            alt={product.name}
+            className="h-12 w-12 rounded object-cover"
+          />
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-label="Nome do produto"
+            className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            aria-label="Preço"
+            className="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            aria-label="Categoria"
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          >
+            {CATEGORY_OPTIONS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="text-sm text-gray-500 hover:underline"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded bg-purple-600 px-3 py-1 text-sm font-medium text-white transition hover:bg-purple-500 disabled:opacity-50"
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </li>
+    )
+  }
+
+  return (
+    <li className="flex items-center gap-3 rounded border border-gray-200 p-3">
+      <img
+        src={`${API_URL}${product.image_url}`}
+        alt={product.name}
+        className="h-12 w-12 rounded object-cover"
+      />
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-900">{product.name}</p>
+        <p className="text-xs text-gray-500">
+          {product.category} · {formatPrice(product.price_cents)}
+          {product.outfit_mixer_category &&
+            ` · também no Outfit Mixer (${MIXER_CATEGORY_LABELS[product.outfit_mixer_category]})`}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="text-sm text-purple-600 hover:underline"
+      >
+        Editar
+      </button>
+      <button type="button" onClick={handleDelete} className="text-sm text-red-500 hover:underline">
+        Excluir
+      </button>
+    </li>
+  )
+}
+
+function ProductList({ token, products, onUpdated, onDeleted }) {
   if (products.length === 0) {
     return <p className="text-sm text-gray-500">Nenhum produto cadastrado ainda.</p>
   }
@@ -295,31 +403,7 @@ function ProductList({ token, products, onDeleted }) {
   return (
     <ul className="flex flex-col gap-2">
       {products.map((p) => (
-        <li
-          key={p.id}
-          className="flex items-center gap-3 rounded border border-gray-200 p-3"
-        >
-          <img
-            src={`${API_URL}${p.image_url}`}
-            alt={p.name}
-            className="h-12 w-12 rounded object-cover"
-          />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">{p.name}</p>
-            <p className="text-xs text-gray-500">
-              {p.category} · {formatPrice(p.price_cents)}
-              {p.outfit_mixer_category &&
-                ` · também no Outfit Mixer (${MIXER_CATEGORY_LABELS[p.outfit_mixer_category]})`}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => handleDelete(p.id)}
-            className="text-sm text-red-500 hover:underline"
-          >
-            Excluir
-          </button>
-        </li>
+        <ProductRow key={p.id} token={token} product={p} onUpdated={onUpdated} onDeleted={onDeleted} />
       ))}
     </ul>
   )
@@ -367,6 +451,9 @@ function AdminPage() {
         <ProductList
           token={token}
           products={products}
+          onUpdated={(updated) =>
+            setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+          }
           onDeleted={(id) => setProducts((prev) => prev.filter((p) => p.id !== id))}
         />
       </div>

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { CartProvider } from './context/CartContext'
 import Layout from './components/layout/Layout'
 import HomePage from './pages/HomePage'
 import LojaPage from './pages/LojaPage'
@@ -9,18 +10,20 @@ import AdminPage from './pages/AdminPage'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="loja" element={<LojaPage />} />
-          <Route path="produto/:id" element={<ProdutoPage />} />
-          <Route path="carrinho" element={<CarrinhoPage />} />
-          <Route path="outfit-mixer" element={<OutfitMixerPage />} />
-          <Route path="admin" element={<AdminPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <CartProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="loja" element={<LojaPage />} />
+            <Route path="produto/:id" element={<ProdutoPage />} />
+            <Route path="carrinho" element={<CarrinhoPage />} />
+            <Route path="outfit-mixer" element={<OutfitMixerPage />} />
+            <Route path="admin" element={<AdminPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </CartProvider>
   )
 }
 

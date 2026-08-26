@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import logo from '../../assets/logo-boardculture.png'
+import { useCart } from '../../context/CartContext'
 
 // Matches the real boardculture.com.br category bar and its dropdowns.
 // Skateboard, Proteção and Roupas are real category groups with the exact
@@ -62,6 +63,8 @@ function utilityLinkClass({ isActive }) {
 }
 
 function Header() {
+  const { totalItems } = useCart()
+
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2">
@@ -73,8 +76,13 @@ function Header() {
         </NavLink>
 
         <div className="flex items-center gap-4">
-          <NavLink to="/carrinho" className={utilityLinkClass} aria-label="Carrinho">
+          <NavLink to="/carrinho" className={(state) => `relative ${utilityLinkClass(state)}`}>
             Carrinho
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-3 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                {totalItems}
+              </span>
+            )}
           </NavLink>
           <NavLink
             to="/admin"

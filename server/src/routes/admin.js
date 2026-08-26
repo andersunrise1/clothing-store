@@ -67,6 +67,32 @@ router.post('/products', requireAdmin, upload.single('image'), (req, res) => {
   res.status(201).json(created)
 })
 
+// Edits name/price/category only — not the photo or Outfit Mixer crop.
+// Re-cropping a photo needs the original file (see
+// .claude/skills/outfitmixer-cropper-fotos on why a cropped result can't
+// be re-derived from itself), which this simple text-field edit doesn't
+// receive; changing the photo is "delete and re-add" for now.
+router.patch('/products/:id', requireAdmin, (req, res) => {
+  const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id)
+  if (!existing) return res.status(404).json({ error: 'Produto não encontrado' })
+
+  const { name, price, category } = req.body ?? {}
+  const priceCents =
+    price !== undefined ? Math.round(Number(price) * 100) : existing.price_cents
+  if (!Number.isFinite(priceCents) || priceCents <= 0) {
+    return res.status(400).json({ error: 'Preço inválido' })
+  }
+
+  db.prepare('UPDATE products SET name = ?, price_cents = ?, category = ? WHERE id = ?').run(
+    name || existing.name,
+    priceCents,
+    category || existing.category,
+    req.params.id,
+  )
+
+  res.json(db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id))
+})
+
 router.delete('/products/:id', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id)
   res.status(204).end()
