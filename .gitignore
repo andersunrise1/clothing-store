@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Backend (server/) — real admin credentials, the local SQLite database,
+# and uploaded product photos should never be committed. .env.example
+# documents the shape without the real values. data/ and uploads/ are
+# siblings of src/, not inside it — see server/src/db.js's comment on
+# why (avoids a node --watch restart loop on every database write).
+server/.env
+server/data/*.sqlite
+server/uploads/*
+!server/uploads/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
