@@ -1,23 +1,3 @@
-export const SHIRTS = [
-  { id: 'white', label: 'Branca', color: '#f9fafb' },
-  { id: 'black', label: 'Preta', color: '#111827' },
-  { id: 'red', label: 'Vermelha', color: '#dc2626' },
-  { id: 'blue', label: 'Azul', color: '#2563eb' },
-  { id: 'green', label: 'Verde', color: '#16a34a' },
-  { id: 'yellow', label: 'Amarela', color: '#eab308' },
-]
-
-// Calça e bermuda dividem o mesmo carrossel (mesma parte do corpo / mesmo slot)
-export const PANTS = [
-  { id: 'gray', label: 'Calça Cinza', color: '#4b5563' },
-  { id: 'black', label: 'Calça Preta', color: '#1f2937' },
-  { id: 'blue', label: 'Calça Jeans', color: '#3b5b8c' },
-  { id: 'brown', label: 'Calça Marrom', color: '#5c4433' },
-  { id: 'khaki-shorts', label: 'Bermuda Cáqui', color: '#a3906b' },
-  { id: 'black-shorts', label: 'Bermuda Preta', color: '#1f2937' },
-  { id: 'blue-shorts', label: 'Bermuda Jeans', color: '#3b5b8c' },
-]
-
 // Aspect ratio (width / height) the crop tool locks to per category, so any
 // uploaded photo comes out a consistent shape for that slot.
 //

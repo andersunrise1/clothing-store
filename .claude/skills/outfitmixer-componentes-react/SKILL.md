@@ -10,25 +10,40 @@ Guia de arquitetura e decisões já validadas para a UI do `outfit-mixer-store`
 qualquer componente, leia este arquivo — várias decisões aqui vieram de
 tentativa e erro real, não são arbitrárias.
 
-## Estrutura atual
+## Estrutura atual (pós-Fase 4)
 
 ```
 src/
-  pages/HomePage.jsx           estado central (catalogs, selected, upload/edit modal)
+  pages/
+    OutfitMixerPage.jsx        página real do Outfit Mixer (rota /outfit-mixer)
+    HomePage.jsx                landing page do site — NÃO é mais o outfit mixer
+    AdminPage.jsx                é aqui que upload/edição/exclusão de peça acontece agora
   components/
     OptionCarousel.jsx         carrossel genérico por categoria (Swiper)
     OutfitPreview.jsx          pilha "vestida em alguém" sem manequim
-    UploadCropModal.jsx        upload + drag&drop + crop (react-easy-crop)
-  data/outfitOptions.js        catálogo seed + ASPECT_RATIOS por categoria
+    UploadCropModal.jsx        crop (react-easy-crop) — reaproveitado pelo Admin
+  data/outfitOptions.js        só ASPECT_RATIOS agora (sem catálogo seed)
   utils/cropImage.js           canvas -> PNG cropado
-  utils/persistence.js         localStorage (ver seção própria abaixo)
+  utils/persistence.js         localStorage só da SELEÇÃO (ver seção própria)
 ```
 
-Categorias hoje: `shirt` (Camiseta) e `pants` (Calça/Bermuda). O código é
-genérico por categoria (dirigido pelo objeto `CATEGORIES` em `HomePage.jsx`),
-então adicionar uma categoria nova é só adicionar uma entrada — boné e tênis
-já existiram e foram removidos por pedido do cliente, então o padrão pra
-reintroduzir categorias já está testado.
+**Mudança estrutural importante da Fase 4**: o projeto inteiro foi renomeado
+de `outfit-mixer-store` pra `Boardculture.com.br` e ganhou rotas (React
+Router) — o outfit mixer não é mais a página inteira, é uma rota entre
+várias (`/`, `/loja`, `/produto/:id`, `/carrinho`, `/outfit-mixer`,
+`/admin`). O catálogo do mixer **não vem mais de dados locais nem de upload
+feito por qualquer visitante** — vem do backend real (`GET
+/api/products/outfit-mixer-items`), populado pelo admin marcando "usar
+também no Outfit Mixer?" ao cadastrar um produto (ver
+`outfitmixer-backend-ecommerce`). `OutfitMixerPage.jsx` **não passa**
+`onAddNew`/`onEditItem`/`onDeleteItem` pro `OptionCarousel` de propósito —
+essas ações são só do admin agora, não da página pública.
+
+Categorias hoje: `shirt` (Camiseta) e `pants` (Calça/Bermuda). O código
+ainda é genérico por categoria — boné e tênis já existiram e foram
+removidos por pedido do cliente, então o padrão pra reintroduzir categorias
+já está testado (só que agora precisaria de uma nova coluna/valor em
+`outfit_mixer_category` no backend também, não só no frontend).
 
 ## A decisão mais importante: sem manequim, sem foto de pessoa
 
@@ -119,16 +134,16 @@ reclamação de "corta a perna" ou "tá desproporcional":
   atual: `h-28 w-28`. Se adicionar categoria nova, ajuste esses tamanhos de
   novo se a UI ficar apertada.
 
-## Persistência (localStorage)
+## Persistência (localStorage) — bem mais simples desde a Fase 4
 
-`utils/persistence.js` salva `catalogs`+`selected` no localStorage a cada
-mudança, carregado uma vez no mount via `useState(buildInitialState)`.
-Detalhe importante: `originalSrc` (blob URL), `crop` e `zoom` são
-**removidos antes de salvar** — blob URLs não sobrevivem a um reload, então
-persistir isso seria guardar uma referência morta. Só `image` (a foto já
-cortada, um `data:` URL de verdade) é persistido. Editar (reabrir o crop)
-uma peça restaurada de uma sessão anterior exige reenviar a foto — isso é
-uma limitação conhecida e aceita, não um bug pra corrigir "de graça".
+Antes da Fase 4, `utils/persistence.js` salvava o CATÁLOGO inteiro (fotos
+enviadas por qualquer visitante) no localStorage — isso não existe mais,
+porque o catálogo agora vem do servidor. O arquivo hoje só guarda **qual
+item está selecionado** por categoria (`{shirt: id, pants: id}`), pra quem
+volta na página não perder a combinação que estava montando. Se um id
+persistido não existir mais no catálogo atual (produto excluído pelo
+admin, por exemplo), `OutfitMixerPage.jsx` cai pro primeiro item da lista
+em vez de quebrar — mesma lógica defensiva de antes, só que mais simples.
 
 ## Como testar mudanças nesta UI
 
