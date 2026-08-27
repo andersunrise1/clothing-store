@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import productsRouter from './routes/products.js'
 import brandsRouter from './routes/brands.js'
 import videosRouter from './routes/videos.js'
+import ordersRouter from './routes/orders.js'
+import paymentWebhookRouter from './routes/paymentWebhook.js'
 import adminRouter from './routes/admin.js'
 import { MAX_UPLOAD_MB } from './uploadConfig.js'
 import './db.js'
@@ -19,6 +21,8 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 app.use('/api/products', productsRouter)
 app.use('/api/brands', brandsRouter)
 app.use('/api/videos', videosRouter)
+app.use('/api/orders', ordersRouter)
+app.use('/api/payment', paymentWebhookRouter)
 app.use('/api/admin', adminRouter)
 
 app.get('/api/health', (req, res) => res.json({ ok: true }))

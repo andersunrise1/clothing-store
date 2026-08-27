@@ -187,4 +187,16 @@ router.delete('/videos/:id', requireAdmin, (req, res) => {
   res.status(204).end()
 })
 
+// Read-only for now — status is driven entirely by the real Mercado Pago
+// webhook (server/src/routes/paymentWebhook.js), not something an admin
+// edits by hand. What the shop owner actually needs here is visibility:
+// what was ordered, by whom, and whether it was actually paid for, so it
+// can be shipped.
+router.get('/orders', requireAdmin, (req, res) => {
+  const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all()
+  const itemsStmt = db.prepare('SELECT * FROM order_items WHERE order_id = ?')
+  const withItems = orders.map((order) => ({ ...order, items: itemsStmt.all(order.id) }))
+  res.json(withItems)
+})
+
 export default router

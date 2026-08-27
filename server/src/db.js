@@ -83,3 +83,36 @@ try {
 } catch {
   // column already exists — nothing to do
 }
+
+// Real checkout, backed by Mercado Pago (server/src/mercadoPagoConfig.js).
+// No customer accounts exist, so contact/shipping info is collected fresh
+// at checkout every time — orders.status starts 'pending' and is flipped
+// to 'approved'/'rejected' by the webhook once Mercado Pago confirms the
+// real payment result (see server/src/routes/paymentWebhook.js). order_items
+// snapshots the product name/price at purchase time — a later price change
+// or product deletion must never rewrite what was actually paid for.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_name TEXT NOT NULL,
+    customer_email TEXT NOT NULL,
+    customer_phone TEXT NOT NULL,
+    shipping_address TEXT NOT NULL,
+    total_cents INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    mp_preference_id TEXT,
+    mp_payment_id TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`)
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    product_id INTEGER,
+    product_name TEXT NOT NULL,
+    unit_price_cents INTEGER NOT NULL,
+    quantity INTEGER NOT NULL
+  )
+`)

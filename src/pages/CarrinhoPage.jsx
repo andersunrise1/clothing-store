@@ -3,10 +3,6 @@ import { API_URL } from '../config'
 import { formatPrice } from '../utils/price'
 import { useCart } from '../context/CartContext'
 
-// Checkout de verdade (Mercado Pago + Pix, confirmado na auditoria do site
-// real) ainda não foi construído — fica pra quando o pagamento entrar no
-// roteiro. "Finalizar compra" aqui é só um botão desabilitado com essa
-// explicação, não um checkout fingido.
 function CarrinhoPage() {
   const { items, removeItem, setQuantity, totalCents } = useCart()
 
@@ -62,14 +58,12 @@ function CarrinhoPage() {
         <span className="text-lg font-semibold text-gray-900">{formatPrice(totalCents)}</span>
       </div>
 
-      <button
-        type="button"
-        disabled
-        title="Pagamento (Mercado Pago + Pix) ainda não foi integrado"
-        className="mt-4 w-full rounded bg-gray-300 px-6 py-3 text-sm font-medium text-gray-500"
+      <Link
+        to="/checkout"
+        className="mt-4 block w-full rounded bg-purple-600 px-6 py-3 text-center text-sm font-medium text-white transition hover:bg-purple-500"
       >
-        Finalizar compra (em breve)
-      </button>
+        Finalizar compra
+      </Link>
     </div>
   )
 }
