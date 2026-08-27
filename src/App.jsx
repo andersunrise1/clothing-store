@@ -6,6 +6,7 @@ import LojaPage from './pages/LojaPage'
 import ProdutoPage from './pages/ProdutoPage'
 import CarrinhoPage from './pages/CarrinhoPage'
 import OutfitMixerPage from './pages/OutfitMixerPage'
+import VideosPage from './pages/VideosPage'
 import AdminPage from './pages/AdminPage'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             <Route path="produto/:id" element={<ProdutoPage />} />
             <Route path="carrinho" element={<CarrinhoPage />} />
             <Route path="outfit-mixer" element={<OutfitMixerPage />} />
+            <Route path="videos" element={<VideosPage />} />
             <Route path="admin" element={<AdminPage />} />
           </Route>
         </Routes>

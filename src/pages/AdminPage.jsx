@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { API_URL } from '../config'
 import AdminProducts from './admin/AdminProducts'
 import AdminBrands from './admin/AdminBrands'
+import AdminVideos from './admin/AdminVideos'
 
 const TABS = [
   { key: 'products', label: 'Produtos' },
   { key: 'brands', label: 'Marcas' },
+  { key: 'videos', label: 'Vídeos' },
 ]
 
 function LoginForm({ onLogin }) {
@@ -111,6 +113,7 @@ function AdminPage() {
 
       {activeTab === 'products' && <AdminProducts token={token} onAuthError={handleLogout} />}
       {activeTab === 'brands' && <AdminBrands token={token} onAuthError={handleLogout} />}
+      {activeTab === 'videos' && <AdminVideos token={token} onAuthError={handleLogout} />}
     </div>
   )
 }

@@ -1,15 +1,7 @@
 import { Router } from 'express'
-import multer from 'multer'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { db } from '../db.js'
 import { createSession, requireAdmin } from '../middleware/auth.js'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// server/src/routes -> up twice -> server/, then into uploads/ (a sibling
-// of src/, not inside it — see db.js's comment on why data/uploads live
-// outside the --watch-path'd source tree).
-const upload = multer({ dest: path.join(__dirname, '..', '..', 'uploads') })
+import { upload } from '../uploadConfig.js'
 
 const router = Router()
 
@@ -126,6 +118,72 @@ router.post('/brands', requireAdmin, upload.single('logo'), (req, res) => {
 
 router.delete('/brands/:id', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM brands WHERE id = ?').run(req.params.id)
+  res.status(204).end()
+})
+
+// Fase 6 — skate videos + the homepage hero video. Add + delete, same
+// precedent as products/brands above (no in-place edit of the file itself).
+// Exactly one row can be flagged is_hero at a time; the PATCH below clears
+// any previous flag before setting a new one, or just clears it outright
+// (isHero: false) so the home can go back to its plain placeholder without
+// deleting the video from the gallery.
+router.get('/videos', requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT * FROM videos ORDER BY created_at DESC').all()
+  res.json(rows)
+})
+
+router.post('/videos', requireAdmin, upload.single('video'), (req, res) => {
+  const { title, isHero, isFeatured } = req.body ?? {}
+  if (!title) {
+    return res.status(400).json({ error: 'Título do vídeo é obrigatório' })
+  }
+  if (!req.file) {
+    return res.status(400).json({ error: 'Arquivo de vídeo é obrigatório' })
+  }
+
+  const videoUrl = `/uploads/${req.file.filename}`
+  const makeHero = isHero === 'true'
+  const makeFeatured = isFeatured === 'true'
+
+  if (makeHero) {
+    db.prepare('UPDATE videos SET is_hero = 0').run()
+  }
+  if (makeFeatured) {
+    db.prepare('UPDATE videos SET is_featured = 0').run()
+  }
+
+  const result = db
+    .prepare('INSERT INTO videos (title, video_url, is_hero, is_featured) VALUES (?, ?, ?, ?)')
+    .run(title, videoUrl, makeHero ? 1 : 0, makeFeatured ? 1 : 0)
+
+  const created = db.prepare('SELECT * FROM videos WHERE id = ?').get(result.lastInsertRowid)
+  res.status(201).json(created)
+})
+
+router.patch('/videos/:id', requireAdmin, (req, res) => {
+  const existing = db.prepare('SELECT * FROM videos WHERE id = ?').get(req.params.id)
+  if (!existing) return res.status(404).json({ error: 'Vídeo não encontrado' })
+
+  const { isHero, isFeatured } = req.body ?? {}
+  if (isHero === true) {
+    db.prepare('UPDATE videos SET is_hero = 0').run()
+    db.prepare('UPDATE videos SET is_hero = 1 WHERE id = ?').run(req.params.id)
+  } else if (isHero === false) {
+    db.prepare('UPDATE videos SET is_hero = 0 WHERE id = ?').run(req.params.id)
+  }
+
+  if (isFeatured === true) {
+    db.prepare('UPDATE videos SET is_featured = 0').run()
+    db.prepare('UPDATE videos SET is_featured = 1 WHERE id = ?').run(req.params.id)
+  } else if (isFeatured === false) {
+    db.prepare('UPDATE videos SET is_featured = 0 WHERE id = ?').run(req.params.id)
+  }
+
+  res.json(db.prepare('SELECT * FROM videos WHERE id = ?').get(req.params.id))
+})
+
+router.delete('/videos/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM videos WHERE id = ?').run(req.params.id)
   res.status(204).end()
 })
 

@@ -52,3 +52,34 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `)
+
+// Fase 6: skate videos, admin-managed. is_hero and is_featured each flag at
+// most one row at a time (enforced in server/src/routes/admin.js, not by a
+// DB constraint) — is_hero is the small, muted, looping background video
+// next to the homepage vitrine; is_featured is a separate, full-size
+// player (real volume control, no autoplay restriction) shown prominently
+// on the homepage — meant for things like event announcements, where the
+// audio actually matters. A video can be both, neither, or just one; every
+// other row is just a video in the public /videos gallery.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    video_url TEXT NOT NULL,
+    is_hero INTEGER NOT NULL DEFAULT 0,
+    is_featured INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`)
+
+// `CREATE TABLE IF NOT EXISTS` above is a no-op on a `videos` table that
+// already exists from before `is_featured` was added — SQLite has no "ADD
+// COLUMN IF NOT EXISTS", so this is the migration for anyone who already
+// has the table without it. Safe to run every startup: the driver throws
+// "duplicate column name" once it's already there, which is exactly the
+// case we're ignoring.
+try {
+  db.exec('ALTER TABLE videos ADD COLUMN is_featured INTEGER NOT NULL DEFAULT 0')
+} catch {
+  // column already exists — nothing to do
+}

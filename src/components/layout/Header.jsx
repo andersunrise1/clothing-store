@@ -5,8 +5,9 @@ import { useCart } from '../../context/CartContext'
 // Matches the real boardculture.com.br category bar and its dropdowns.
 // Skateboard, Proteção and Roupas are real category groups with the exact
 // sub-items the live site lists; Bags, Livros/Zines & Arte and Cartão
-// Presente are flat links there too. Outfit Mixer is the one addition —
-// same style, no dropdown, since it's a tool/page, not a product category.
+// Presente are flat links there too. Outfit Mixer and Vídeos are the two
+// additions — same style, no dropdown, since they're tools/pages, not
+// product categories.
 // Every link (top-level and sub-item) points at /loja for now — the
 // catalog itself isn't built yet (Fase 2/3 of the roadmap) — except
 // Outfit Mixer, which is the one link that's actually functional today.
@@ -48,6 +49,7 @@ const CATEGORIES = [
   { to: '/loja', label: 'Livros, Zines & Arte' },
   { to: '/loja', label: 'Cartão Presente' },
   { to: '/outfit-mixer', label: 'Outfit Mixer' },
+  { to: '/videos', label: 'Vídeos' },
 ]
 
 function categoryLinkClass({ isActive }) {
