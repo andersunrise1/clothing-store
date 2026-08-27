@@ -4,6 +4,7 @@ import BrandCarousel from '../components/BrandCarousel'
 import ProductCard from '../components/ProductCard'
 import { useCart } from '../context/CartContext'
 import { API_URL } from '../config'
+import logo from '../assets/logo-boardculture.png'
 
 function SpeakerIcon({ muted }) {
   return (
@@ -31,10 +32,12 @@ function SpeakerIcon({ muted }) {
 // this used to be a full-width hero taking over the whole top of the page,
 // which left no room for that. Now it's a smaller side panel (still plays
 // the admin's hero video when one is flagged) sitting next to the vitrine
-// instead of dominating it. Muted by default (autoplay-with-sound is
-// blocked by every browser regardless of what we do here) — the volume
-// button lets a visitor opt into sound themselves, a real click/user
-// gesture, so unmuting is allowed.
+// instead of dominating it. Just the video and the volume toggle now —
+// no text/CTA overlay (the "Outfit Mixer" link already lives in the main
+// nav, so nothing is lost by dropping the button here). Muted by default
+// (autoplay-with-sound is blocked by every browser regardless of what we
+// do here) — the volume button lets a visitor opt into sound themselves,
+// a real click/user gesture, so unmuting is allowed.
 function HeroPanel({ heroVideo }) {
   const videoRef = useRef(null)
   const [muted, setMuted] = useState(true)
@@ -48,7 +51,7 @@ function HeroPanel({ heroVideo }) {
   }
 
   return (
-    <div className="relative flex min-h-[420px] flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-gray-900 p-6 text-center text-white">
+    <div className="relative min-h-[420px] overflow-hidden rounded-lg bg-gray-900">
       {heroVideo && (
         <>
           <video
@@ -59,7 +62,12 @@ function HeroPanel({ heroVideo }) {
             muted={muted}
             loop
             playsInline
-            className="absolute inset-0 h-full w-full object-cover opacity-50"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <img
+            src={logo}
+            alt="Board Culture"
+            className="absolute bottom-3 left-3 z-20 h-10 w-auto drop-shadow-lg"
           />
           <button
             type="button"
@@ -71,23 +79,6 @@ function HeroPanel({ heroVideo }) {
           </button>
         </>
       )}
-
-      <div className="relative z-10 flex flex-col items-center gap-3">
-        <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-          Skate &amp; streetwear
-        </p>
-        <h1 className="text-xl font-bold text-balance">Vista o look antes de comprar</h1>
-        <p className="text-xs text-gray-300">
-          Monte a combinação de camiseta e calça no nosso Outfit Mixer, sem
-          precisar imaginar como fica.
-        </p>
-        <Link
-          to="/outfit-mixer"
-          className="rounded-full bg-purple-600 px-4 py-2 text-xs font-semibold transition hover:bg-purple-500"
-        >
-          Montar meu look
-        </Link>
-      </div>
     </div>
   )
 }
