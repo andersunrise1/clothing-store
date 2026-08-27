@@ -1,22 +1,29 @@
+import { Link } from 'react-router-dom'
 import { API_URL } from '../config'
 
 // Auto-scrolling brand strip matching the real boardculture.com.br: logos
 // sit in grayscale, drift sideways on their own at a steady pace, and the
 // whole thing stops the instant the mouse enters — the logo under the
 // cursor then shows its real color, everything else stays grayscale.
+// Clicking a logo goes straight to that brand's products (LojaPage reads
+// the ?marca= param) — same behavior as the real site.
 //
 // Pure CSS drives the motion (see .brand-track's animation in index.css) —
 // no animation library, no per-frame JS, so the pause-on-hover is just
 // `animation-play-state: paused` and costs nothing to keep smooth.
 function BrandLogo({ brand }) {
   return (
-    <div className="flex h-24 w-52 shrink-0 items-center justify-center px-6" title={brand.name}>
+    <Link
+      to={`/loja?marca=${brand.id}`}
+      className="flex h-24 w-52 shrink-0 items-center justify-center px-6"
+      title={brand.name}
+    >
       <img
         src={`${API_URL}${brand.logo_url}`}
         alt={brand.name}
         className="brand-logo max-h-20 w-auto object-contain"
       />
-    </div>
+    </Link>
   )
 }
 

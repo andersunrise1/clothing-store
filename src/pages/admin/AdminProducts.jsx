@@ -15,10 +15,11 @@ const CATEGORY_OPTIONS = [
 
 const MIXER_CATEGORY_LABELS = { shirt: 'Camiseta', pants: 'Calça / Bermuda' }
 
-function ProductForm({ token, onCreated }) {
+function ProductForm({ token, brands, onCreated }) {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [category, setCategory] = useState(CATEGORY_OPTIONS[0])
+  const [brandId, setBrandId] = useState('')
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null)
 
@@ -58,6 +59,7 @@ function ProductForm({ token, onCreated }) {
       formData.append('name', name)
       formData.append('price', price)
       formData.append('category', category)
+      if (brandId) formData.append('brandId', brandId)
       formData.append('image', photoFile)
       if (useInMixer) {
         formData.append('outfitMixerCategory', mixerCategory)
@@ -75,6 +77,7 @@ function ProductForm({ token, onCreated }) {
       onCreated(data)
       setName('')
       setPrice('')
+      setBrandId('')
       setPhotoFile(null)
       setPhotoPreviewUrl(null)
       setUseInMixer(false)
@@ -126,6 +129,20 @@ function ProductForm({ token, onCreated }) {
             ))}
           </select>
         </div>
+
+        <select
+          value={brandId}
+          onChange={(e) => setBrandId(e.target.value)}
+          aria-label="Marca"
+          className="rounded border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">Sem marca</option>
+          {brands.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
 
         <label className="text-sm text-gray-600">
           Foto do produto
@@ -213,11 +230,12 @@ function ProductForm({ token, onCreated }) {
   )
 }
 
-function ProductRow({ token, product, onUpdated, onDeleted }) {
+function ProductRow({ token, product, brands, onUpdated, onDeleted }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(product.name)
   const [price, setPrice] = useState((product.price_cents / 100).toFixed(2))
   const [category, setCategory] = useState(product.category)
+  const [brandId, setBrandId] = useState(product.brand_id ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -236,7 +254,7 @@ function ProductRow({ token, product, onUpdated, onDeleted }) {
       const res = await fetch(`${API_URL}/api/admin/products/${product.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name, price, category }),
+        body: JSON.stringify({ name, price, category, brandId: brandId || null }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erro ao salvar')
@@ -286,6 +304,19 @@ function ProductRow({ token, product, onUpdated, onDeleted }) {
               </option>
             ))}
           </select>
+          <select
+            value={brandId}
+            onChange={(e) => setBrandId(e.target.value)}
+            aria-label="Marca"
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          >
+            <option value="">Sem marca</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-end gap-2">
@@ -320,6 +351,8 @@ function ProductRow({ token, product, onUpdated, onDeleted }) {
         <p className="text-sm font-medium text-gray-900">{product.name}</p>
         <p className="text-xs text-gray-500">
           {product.category} · {formatPrice(product.price_cents)}
+          {product.brand_id &&
+            ` · ${brands.find((b) => b.id === product.brand_id)?.name ?? 'marca removida'}`}
           {product.outfit_mixer_category &&
             ` · também no Outfit Mixer (${MIXER_CATEGORY_LABELS[product.outfit_mixer_category]})`}
         </p>
@@ -338,7 +371,7 @@ function ProductRow({ token, product, onUpdated, onDeleted }) {
   )
 }
 
-function ProductList({ token, products, onUpdated, onDeleted }) {
+function ProductList({ token, products, brands, onUpdated, onDeleted }) {
   if (products.length === 0) {
     return <p className="text-sm text-gray-500">Nenhum produto cadastrado ainda.</p>
   }
@@ -346,7 +379,14 @@ function ProductList({ token, products, onUpdated, onDeleted }) {
   return (
     <ul className="flex flex-col gap-2">
       {products.map((p) => (
-        <ProductRow key={p.id} token={token} product={p} onUpdated={onUpdated} onDeleted={onDeleted} />
+        <ProductRow
+          key={p.id}
+          token={token}
+          product={p}
+          brands={brands}
+          onUpdated={onUpdated}
+          onDeleted={onDeleted}
+        />
       ))}
     </ul>
   )
@@ -354,23 +394,30 @@ function ProductList({ token, products, onUpdated, onDeleted }) {
 
 function AdminProducts({ token, onAuthError }) {
   const [products, setProducts] = useState([])
+  const [brands, setBrands] = useState([])
 
   useEffect(() => {
     fetch(`${API_URL}/api/admin/products`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then(setProducts)
       .catch(() => onAuthError())
+
+    fetch(`${API_URL}/api/admin/brands`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then(setBrands)
+      .catch(() => {}) // non-critical — the brand dropdown just stays empty
   }, [token, onAuthError])
 
   return (
     <div className="flex flex-col gap-8">
-      <ProductForm token={token} onCreated={(p) => setProducts((prev) => [p, ...prev])} />
+      <ProductForm token={token} brands={brands} onCreated={(p) => setProducts((prev) => [p, ...prev])} />
 
       <div>
         <h2 className="mb-3 text-lg font-semibold text-gray-900">Produtos cadastrados</h2>
         <ProductList
           token={token}
           products={products}
+          brands={brands}
           onUpdated={(updated) =>
             setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
           }

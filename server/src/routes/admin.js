@@ -28,7 +28,7 @@ router.get('/products', requireAdmin, (req, res) => {
 // See .claude/skills/outfitmixer-cropper-fotos for why those two need to
 // be different crops of the same source file, not the same image reused.
 router.post('/products', requireAdmin, upload.single('image'), (req, res) => {
-  const { name, price, category, outfitMixerCategory, outfitMixerImage } = req.body
+  const { name, price, category, outfitMixerCategory, outfitMixerImage, brandId } = req.body
 
   if (!name || !price || !category) {
     return res.status(400).json({ error: 'Nome, preço e categoria são obrigatórios' })
@@ -46,14 +46,19 @@ router.post('/products', requireAdmin, upload.single('image'), (req, res) => {
     return res.status(400).json({ error: 'Categoria do Outfit Mixer inválida' })
   }
 
+  const resolvedBrandId = brandId ? Number(brandId) : null
+  if (resolvedBrandId && !db.prepare('SELECT id FROM brands WHERE id = ?').get(resolvedBrandId)) {
+    return res.status(400).json({ error: 'Marca não encontrada' })
+  }
+
   const imageUrl = `/uploads/${req.file.filename}`
 
   const result = db
     .prepare(
-      `INSERT INTO products (name, price_cents, category, image_url, outfit_mixer_category, outfit_mixer_image)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (name, price_cents, category, image_url, outfit_mixer_category, outfit_mixer_image, brand_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(name, priceCents, category, imageUrl, outfitMixerCategory ?? null, outfitMixerImage ?? null)
+    .run(name, priceCents, category, imageUrl, outfitMixerCategory ?? null, outfitMixerImage ?? null, resolvedBrandId)
 
   const created = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid)
   res.status(201).json(created)
@@ -68,17 +73,26 @@ router.patch('/products/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id)
   if (!existing) return res.status(404).json({ error: 'Produto não encontrado' })
 
-  const { name, price, category } = req.body ?? {}
+  const { name, price, category, brandId } = req.body ?? {}
   const priceCents =
     price !== undefined ? Math.round(Number(price) * 100) : existing.price_cents
   if (!Number.isFinite(priceCents) || priceCents <= 0) {
     return res.status(400).json({ error: 'Preço inválido' })
   }
 
-  db.prepare('UPDATE products SET name = ?, price_cents = ?, category = ? WHERE id = ?').run(
+  let resolvedBrandId = existing.brand_id
+  if (brandId !== undefined) {
+    resolvedBrandId = brandId ? Number(brandId) : null
+    if (resolvedBrandId && !db.prepare('SELECT id FROM brands WHERE id = ?').get(resolvedBrandId)) {
+      return res.status(400).json({ error: 'Marca não encontrada' })
+    }
+  }
+
+  db.prepare('UPDATE products SET name = ?, price_cents = ?, category = ?, brand_id = ? WHERE id = ?').run(
     name || existing.name,
     priceCents,
     category || existing.category,
+    resolvedBrandId,
     req.params.id,
   )
 

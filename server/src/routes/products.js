@@ -8,15 +8,28 @@ const router = Router()
 // Mixer page (Fase 4 of the roadmap wires it up), and returning it on
 // every catalog listing would leak an implementation detail the shopper
 // doesn't need.
-const PUBLIC_COLUMNS = 'id, name, price_cents, category, image_url, created_at'
+const PUBLIC_COLUMNS = 'id, name, price_cents, category, image_url, brand_id, created_at'
 
+// category and brandId can combine (both narrow the same list) — clicking
+// a brand logo in the homepage carousel (BrandCarousel.jsx -> LojaPage)
+// only ever sets brandId, but a shopper could reasonably want both.
 router.get('/', (req, res) => {
-  const { category } = req.query
-  const rows = category
-    ? db
-        .prepare(`SELECT ${PUBLIC_COLUMNS} FROM products WHERE category = ? ORDER BY created_at DESC`)
-        .all(category)
-    : db.prepare(`SELECT ${PUBLIC_COLUMNS} FROM products ORDER BY created_at DESC`).all()
+  const { category, brandId } = req.query
+  const conditions = []
+  const params = []
+  if (category) {
+    conditions.push('category = ?')
+    params.push(category)
+  }
+  if (brandId) {
+    conditions.push('brand_id = ?')
+    params.push(Number(brandId))
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+  const rows = db
+    .prepare(`SELECT ${PUBLIC_COLUMNS} FROM products ${where} ORDER BY created_at DESC`)
+    .all(...params)
   res.json(rows)
 })
 

@@ -36,9 +36,21 @@ db.exec(`
     -- .claude/skills/outfitmixer-cropper-fotos).
     outfit_mixer_category TEXT,
     outfit_mixer_image TEXT,
+    -- Which brand (brands.id) this product belongs to, if any — lets
+    -- clicking a logo in the homepage carousel (BrandCarousel.jsx) filter
+    -- the catalog down to that brand's products, matching the real site.
+    -- Nullable: not every product needs a brand assigned, and existing
+    -- products before this column existed have none.
+    brand_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `)
+
+try {
+  db.exec('ALTER TABLE products ADD COLUMN brand_id INTEGER')
+} catch {
+  // column already exists — nothing to do
+}
 
 // The homepage brand strip (BrandCarousel.jsx) — admin-managed (add/delete
 // only, matching the same "delete and re-add" precedent as a product's
