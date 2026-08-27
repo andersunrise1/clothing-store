@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { API_URL } from '../config'
 import AdminProducts from './admin/AdminProducts'
+import AdminBrands from './admin/AdminBrands'
+
+const TABS = [
+  { key: 'products', label: 'Produtos' },
+  { key: 'brands', label: 'Marcas' },
+]
 
 function LoginForm({ onLogin }) {
   const [username, setUsername] = useState('')
@@ -61,6 +67,7 @@ function LoginForm({ onLogin }) {
 
 function AdminPage() {
   const [token, setToken] = useState(() => localStorage.getItem('bc_admin_token'))
+  const [activeTab, setActiveTab] = useState('products')
 
   const handleLogin = (newToken) => {
     localStorage.setItem('bc_admin_token', newToken)
@@ -85,7 +92,25 @@ function AdminPage() {
         </button>
       </div>
 
-      <AdminProducts token={token} onAuthError={handleLogout} />
+      <div className="flex gap-1 border-b border-gray-200">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 text-sm font-medium transition ${
+              activeTab === tab.key
+                ? 'border-b-2 border-purple-600 text-purple-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'products' && <AdminProducts token={token} onAuthError={handleLogout} />}
+      {activeTab === 'brands' && <AdminBrands token={token} onAuthError={handleLogout} />}
     </div>
   )
 }

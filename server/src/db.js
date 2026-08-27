@@ -39,3 +39,16 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `)
+
+// The homepage brand strip (BrandCarousel.jsx) — admin-managed (add/delete
+// only, matching the same "delete and re-add" precedent as a product's
+// photo above; no edit-in-place endpoint). No price/category, just a name
+// and the logo file itself.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS brands (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    logo_url TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`)

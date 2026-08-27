@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import BrandCarousel from '../components/BrandCarousel'
+import { API_URL } from '../config'
 
 // Hero video (Fase 6 do roteiro) ainda não existe — este bloco fica como um
 // placeholder honesto até o admin poder subir um vídeo de verdade, em vez de
@@ -27,8 +30,18 @@ function Hero() {
 }
 
 function HomePage() {
+  const [brands, setBrands] = useState([])
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/brands`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then(setBrands)
+      .catch(() => {}) // non-critical — the strip just doesn't render
+  }, [])
+
   return (
     <div>
+      {brands.length > 0 && <BrandCarousel brands={brands} />}
       <Hero />
 
       <section className="mx-auto max-w-5xl px-4 py-16 text-center">

@@ -3,6 +3,7 @@ import cors from 'cors'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import productsRouter from './routes/products.js'
+import brandsRouter from './routes/brands.js'
 import adminRouter from './routes/admin.js'
 import './db.js'
 
@@ -14,6 +15,7 @@ app.use(express.json())
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 
 app.use('/api/products', productsRouter)
+app.use('/api/brands', brandsRouter)
 app.use('/api/admin', adminRouter)
 
 app.get('/api/health', (req, res) => res.json({ ok: true }))

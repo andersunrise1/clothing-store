@@ -8,3 +8,44 @@ body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* Brand carousel (BrandCarousel.jsx): steady auto-scroll, paused entirely
+   while the mouse is anywhere over the strip so a hovered logo's color
+   reveal isn't fighting a moving target. 50s is "medium" for the current
+   logo size (h-24/w-52 each) — tune the duration here to speed up/slow
+   down; bigger logos need a longer duration to keep the same felt speed. */
+@keyframes brand-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.brand-track {
+  animation: brand-scroll 50s linear infinite;
+}
+
+.brand-marquee:hover .brand-track {
+  animation-play-state: paused;
+}
+
+/* Plain CSS, not Tailwind's `grayscale`/`hover:grayscale-0` utilities —
+   this Tailwind v4 setup never generated a `grayscale-0` rule (confirmed
+   by inspecting the built stylesheet), so the color reveal silently never
+   applied. A hand-written rule sidesteps whatever's missing there. */
+.brand-logo {
+  filter: grayscale(1);
+  transition: filter 200ms;
+}
+
+.brand-logo:hover {
+  filter: grayscale(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-track {
+    animation: none;
+  }
+}

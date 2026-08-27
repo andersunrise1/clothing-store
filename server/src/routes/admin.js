@@ -98,4 +98,35 @@ router.delete('/products/:id', requireAdmin, (req, res) => {
   res.status(204).end()
 })
 
+// Homepage brand strip — just a name + logo file, no price/category/stock.
+// Add + delete only (same "delete and re-add to change the photo"
+// precedent as products above); there's no real need to edit a brand's
+// name in place.
+router.get('/brands', requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT * FROM brands ORDER BY created_at DESC').all()
+  res.json(rows)
+})
+
+router.post('/brands', requireAdmin, upload.single('logo'), (req, res) => {
+  const { name } = req.body ?? {}
+  if (!name) {
+    return res.status(400).json({ error: 'Nome da marca é obrigatório' })
+  }
+  if (!req.file) {
+    return res.status(400).json({ error: 'Logo da marca é obrigatório' })
+  }
+
+  const logoUrl = `/uploads/${req.file.filename}`
+  const result = db
+    .prepare('INSERT INTO brands (name, logo_url) VALUES (?, ?)')
+    .run(name, logoUrl)
+  const created = db.prepare('SELECT * FROM brands WHERE id = ?').get(result.lastInsertRowid)
+  res.status(201).json(created)
+})
+
+router.delete('/brands/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM brands WHERE id = ?').run(req.params.id)
+  res.status(204).end()
+})
+
 export default router
